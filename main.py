@@ -6,7 +6,7 @@ from telegram.ext import (
 import json, imaplib, smtplib
 from email.mime.text import MIMEText
 
-OWNER_ID =   # <-- غيّر دا للـ Telegram ID بتاعك
+OWNER_ID = 7753511487 # <-- غيّر دا للـ Telegram ID بتاعك
 BOT_TOKEN = "8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U"  # <-- غيّر دا لتوكن البوت
 
 GET_EMAIL, GET_SUBJECT, GET_BODY = range(3)
