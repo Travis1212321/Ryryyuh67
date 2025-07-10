@@ -143,13 +143,12 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif text == "📞 تواصل مع المطور":
         await update.message.reply_text("📞 تواصل مع المطور: https://wa.me/+249126083647")
 
-    elif text == "🔗 ربط حساب":
-        await link_account(update, context)
-
 # تشغيل البوت
 app = ApplicationBuilder().token("8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U").build()
+
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+
 conv_handler = ConversationHandler(
     entry_points=[MessageHandler(filters.Regex("🔗 ربط حساب"), link_account)],
     states={
