@@ -3,52 +3,33 @@ from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler,
     filters, ConversationHandler, ContextTypes
 )
-import json, os, smtplib, imaplib, email
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
+import json, os, imaplib, email
 from email.header import decode_header
-from email import encoders
 from crypto_utils import generate_key, encrypt_password, decrypt_password
 
 generate_key()
-
 temp_data = {}
-send_temp_data = {}
-
 ASK_EMAIL, ASK_PASSWORD = range(2)
-TO_EMAIL_ONE, SUBJECT_ONE, BODY_ONE = range(3, 6)
-TO_EMAIL_ALL, SUBJECT_ALL, BODY_ALL = range(6, 9)
-CHOOSE_DELETE = 9
 
 welcome_text = """👋 مرحباً بك في بوت الإيميلات
 
 🔐 تأكد إن معلوماتك بأمان، كلمات السر بنخزنها بشكل مشفر.
 
-📌 الأوامر المتاحة:
-- ربط حساب Gmail
+📌 الأوامر:
+- 🔗 ربط حساب
 - 📂 حساباتي
 - ❌ حذف حساب
 - 📥 استلام
 - 📥 استلام من الكل
-- 📤 إرسال
-- 📤 إرسال من الكل
-- 📞 تواصل مع المطور
-- مرفق؟ فقط أرسل الملف أو الصورة
-
-📎 البوت مصمم لتسهيل إدارة الإيميلات، ونحاول دايماً نطوّرو بشكل أفضل."""
+- 📞 تواصل مع المطور"""
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
-    await context.bot.send_photo(chat_id=chat_id, photo="https://files.catbox.moe/jt6lea.jpg")
-    await context.bot.send_audio(chat_id=chat_id, audio="https://files.catbox.moe/2okh85.mp3")
-    await context.bot.send_message(chat_id=chat_id, text=welcome_text)
+    await update.message.reply_text(welcome_text)
     await inbox_menu(update, context)
 
 async def inbox_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         ["📥 استلام", "📥 استلام من الكل"],
-        ["📤 إرسال", "📤 إرسال من الكل"],
         ["📂 حساباتي", "❌ حذف حساب"],
         ["📞 تواصل مع المطور"],
         ["🔗 ربط حساب"]
@@ -57,12 +38,16 @@ async def inbox_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("اختر خيار من القائمة يا دباب:", reply_markup=markup)
 
 async def link_account(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("📨 أرسل إيميل Gmail بتاعك يا دباب:")
+    await update.message.reply_text("📨 أرسل إيميل Gmail بتاعك:")
     return ASK_EMAIL
 
 async def ask_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    temp_data[update.effective_user.id] = {"email": update.message.text}
-    await update.message.reply_text("🔐 أرسل كلمة المرور يا دباب:")
+    email_text = update.message.text.strip()
+    if "@" not in email_text or not email_text.endswith("gmail.com"):
+        await update.message.reply_text("❌ الإيميل غير صحيح.")
+        return ASK_EMAIL
+    temp_data[update.effective_user.id] = {"email": email_text}
+    await update.message.reply_text("🔐 أرسل كلمة المرور:")
     return ASK_PASSWORD
 
 async def ask_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -85,7 +70,7 @@ async def ask_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
     with open("users.json", "w") as f:
         json.dump(data, f, indent=2)
 
-    await update.message.reply_text(f"✅ تم ربط الحساب {email_} بنجاح يا دباب.")
+    await update.message.reply_text(f"✅ تم ربط الحساب {email_}.")
     return ConversationHandler.END
 
 def get_last_emails(email_user, encrypted_password, limit=5):
@@ -108,11 +93,11 @@ def get_last_emails(email_user, encrypted_password, limit=5):
         mail.logout()
         return messages
     except Exception as e:
-        return [f"❌ خطأ في استلام البريد:\n{e}"]
+        return [f"❌ خطأ:\n{e}"]
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
-    text = update.message.text
+    text = update.message.text.strip()
 
     if not os.path.exists("users.json"):
         with open("users.json", "w") as f:
@@ -123,31 +108,25 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if text == "📥 استلام":
         if user_id not in data or not data[user_id]:
-            await update.message.reply_text("❗ يا دباب، ما عندك حساب مربوط.")
+            await update.message.reply_text("❗ ما عندك حساب مربوط.")
             return
         acc = data[user_id][0]
         msgs = get_last_emails(acc["email"], acc["password"])
         await update.message.reply_text("\n\n".join(msgs[:5]))
 
     elif text == "📥 استلام من الكل":
-        if user_id not in data:
-            await update.message.reply_text("❗ يا دباب، ما عندك أي حسابات.")
+        if user_id not in data or not data[user_id]:
+            await update.message.reply_text("❗ ما عندك حسابات.")
             return
         result = ""
         for acc in data[user_id]:
             msgs = get_last_emails(acc["email"], acc["password"], limit=1)
             result += f"\n📬 {acc['email']}\n{msgs[0]}\n"
-        await update.message.reply_text(result or "📭 ما في أي رسائل حالياً يا دباب.")
-
-    elif text == "📞 تواصل مع المطور":
-        await update.message.reply_text("💬 للتواصل مع المطور يا دباب:\n🔗 https://wa.me/+249126083647?text=السلام%20عليكم،%20داير%20مساعدة%20في%20البوت")
-
-    elif text == "🔗 ربط حساب":
-        await link_account(update, context)
+        await update.message.reply_text(result or "📭 لا توجد رسائل.")
 
     elif text == "📂 حساباتي":
         if user_id not in data or not data[user_id]:
-            await update.message.reply_text("📭 ما عندك حسابات محفوظة يا دباب.")
+            await update.message.reply_text("📭 ما عندك حسابات.")
         else:
             emails = [acc["email"] for acc in data[user_id]]
             await update.message.reply_text("📂 حساباتك:\n" + "\n".join(emails))
@@ -157,17 +136,20 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             del data[user_id]
             with open("users.json", "w") as f:
                 json.dump(data, f, indent=2)
-            await update.message.reply_text("✅ تم حذف حساباتك يا دباب.")
+            await update.message.reply_text("✅ تم حذف الحسابات.")
         else:
-            await update.message.reply_text("📭 ما عندك أي حسابات يا دباب.")
+            await update.message.reply_text("📭 ما عندك حسابات.")
+
+    elif text == "📞 تواصل مع المطور":
+        await update.message.reply_text("📞 تواصل مع المطور: https://wa.me/+249126083647")
+
+    elif text == "🔗 ربط حساب":
+        await link_account(update, context)
 
 # تشغيل البوت
 app = ApplicationBuilder().token("8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U").build()
-
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
-
-# إذا عندك ConversationHandler لربط الحساب
 conv_handler = ConversationHandler(
     entry_points=[MessageHandler(filters.Regex("🔗 ربط حساب"), link_account)],
     states={
@@ -176,6 +158,5 @@ conv_handler = ConversationHandler(
     },
     fallbacks=[]
 )
-
 app.add_handler(conv_handler)
 app.run_polling()
