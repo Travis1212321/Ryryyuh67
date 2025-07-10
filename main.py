@@ -115,7 +115,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 if __name__ == "__main__":
     new_account = {
         "email": "rekardo647@gmail.com",
-        "password": "c0960960221##"
+        "password": "ntfersdmsxtivceg"
     }
 
     accounts = load_bot_accounts()
