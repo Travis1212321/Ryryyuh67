@@ -1,23 +1,23 @@
-from telegram import Update, ReplyKeyboardMarkup
+from telegram import (
+    Update, ReplyKeyboardMarkup,
+    InputMediaPhoto, InputMediaAudio
+)
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler,
     filters, ContextTypes, ConversationHandler
 )
-import json, imaplib, smtplib
+import imaplib, smtplib, email, json
 from email.mime.text import MIMEText
 
-OWNER_ID = 7753511487  # <-- غيّر دا بالـ Telegram ID بتاعك
-BOT_TOKEN = "8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U"  # <-- غيّر دا بتوكن البوت
+OWNER_ID = 7753511487  # ← غيّر دا برقمك لو عايز
+BOT_TOKEN = "8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U"
 
 GET_EMAIL, GET_SUBJECT, GET_BODY = range(3)
 
-def load_bot_accounts():
-    with open("accounts.json", "r") as f:
-        return json.load(f)
-
-def save_bot_accounts(accounts):
-    with open("accounts.json", "w") as f:
-        json.dump(accounts, f, indent=4)
+ACCOUNTS = [
+    {"email": "rekardo647@gmail.com", "password": "ntfersdmsxtivceg"},
+    # أضف حسابات زيادة هنا لو عايز
+]
 
 def send_email(from_email, password, to_email, subject, body):
     msg = MIMEText(body)
@@ -34,49 +34,78 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = []
 
     if user_id == OWNER_ID:
-        keyboard = [
-            ["➕ إضافة حساب"],
-            ["📥 استلام من الكل", "📤 إرسال من الكل"]
-        ]
+        keyboard = [["📥 استلام من الكل", "📤 إرسال من الكل"]]
 
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    await update.message.reply_text("أهلاً بيك في البوت 🤖", reply_markup=reply_markup)
+
+    # روابط الوسائط
+    image_url = "https://files.catbox.moe/jt6lea.jpg"
+    audio_url = "https://files.catbox.moe/2okh85.mp3"
+
+    # أرسل الوسائط
+    await context.bot.send_media_group(
+        chat_id=update.effective_chat.id,
+        media=[
+            InputMediaPhoto(media=image_url, caption="أهلاً بيك في البوت 🤖"),
+            InputMediaAudio(media=audio_url, caption="🎵 دي الأغنية بتاعتنا 🎶"),
+        ]
+    )
+
+    await update.message.reply_text("اختر من القائمة:", reply_markup=reply_markup)
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     msg = update.message.text
 
-    if msg == "➕ إضافة حساب":
-        if user_id != OWNER_ID:
-            await update.message.reply_text("🚫 ما مسموح ليك.")
-            return
-        await update.message.reply_text("أرسل الإيميل وكلمة السر بصيغة:\n`email:password`", parse_mode="Markdown")
-        return
-
-    if ":" in msg and user_id == OWNER_ID:
-        try:
-            email_, password_ = msg.split(":", 1)
-            accounts = load_bot_accounts()
-            accounts.append({"email": email_.strip(), "password": password_.strip()})
-            save_bot_accounts(accounts)
-            await update.message.reply_text(f"✅ تم إضافة الحساب: {email_}")
-        except Exception as e:
-            await update.message.reply_text(f"❌ فشل: {e}")
-
-    elif msg == "📥 استلام من الكل" and user_id == OWNER_ID:
-        await update.message.reply_text("🔄 جاري التحقق من الإيميلات...")
-        accounts = load_bot_accounts()
-        for acc in accounts:
+    if msg == "📥 استلام من الكل" and user_id == OWNER_ID:
+        await update.message.reply_text("🔄 جاري التحقق من رسائل واتساب فقط...")
+        for idx, acc in enumerate(ACCOUNTS):
             try:
                 mail = imaplib.IMAP4_SSL("imap.gmail.com")
                 mail.login(acc["email"], acc["password"])
                 mail.select("inbox")
+
                 status, messages = mail.search(None, "ALL")
-                count = len(messages[0].split())
-                await update.message.reply_text(f"{acc['email']} فيه {count} رسالة.")
+                mail_ids = messages[0].split()
+                count = 0
+
+                for mail_id in reversed(mail_ids[-20:]):
+                    res, msg_data = mail.fetch(mail_id, "(RFC822)")
+                    raw_email = msg_data[0][1]
+                    msg_obj = email.message_from_bytes(raw_email)
+
+                    from_ = msg_obj["From"] or ""
+                    subject = msg_obj["Subject"] or ""
+                    body = ""
+
+                    if msg_obj.is_multipart():
+                        for part in msg_obj.walk():
+                            if part.get_content_type() == "text/plain":
+                                body = part.get_payload(decode=True).decode(errors="ignore")
+                                break
+                    else:
+                        body = msg_obj.get_payload(decode=True).decode(errors="ignore")
+
+                    is_whatsapp_sender = any(w in from_.lower() for w in [
+                        "support.whatsapp.com", "messaging-support@whatsapp.com"
+                    ])
+
+                    has_verification_code = (
+                        "رمز" in body or "code" in body.lower() or
+                        any(len(word) == 6 and word.isdigit() for word in body.split())
+                    )
+
+                    if is_whatsapp_sender and not has_verification_code:
+                        count += 1
+                        await update.message.reply_text(
+                            f"📨 من فريق واتساب:\n*{subject}*\n\n{body[:1000]}",
+                            parse_mode="Markdown"
+                        )
+
+                await update.message.reply_text(f"📥 الحساب رقم {idx + 1} فيه {count} رسالة من واتساب.")
                 mail.logout()
-            except Exception as e:
-                await update.message.reply_text(f"❌ خطأ مع {acc['email']}: {e}")
+            except Exception:
+                await update.message.reply_text(f"❌ فشل في التحقق من الحساب رقم {idx + 1}")
 
     elif msg == "📤 إرسال من الكل" and user_id == OWNER_ID:
         await update.message.reply_text("📨 أرسل البريد المراد الإرسال إليه:")
@@ -97,13 +126,12 @@ async def get_body(update: Update, context: ContextTypes.DEFAULT_TYPE):
     subject = context.user_data["subject"]
     body = update.message.text
 
-    accounts = load_bot_accounts()
-    for acc in accounts:
+    for idx, acc in enumerate(ACCOUNTS):
         try:
             send_email(acc["email"], acc["password"], to_email, subject, body)
-            await update.message.reply_text(f"✅ تم الإرسال من {acc['email']}")
-        except Exception as e:
-            await update.message.reply_text(f"❌ فشل من {acc['email']}: {e}")
+            await update.message.reply_text(f"✅ تم الإرسال من الحساب رقم {idx + 1}")
+        except Exception:
+            await update.message.reply_text(f"❌ فشل في الإرسال من الحساب رقم {idx + 1}")
 
     return ConversationHandler.END
 
@@ -111,23 +139,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("❌ تم الإلغاء.")
     return ConversationHandler.END
 
-# ✅ إضافة الحساب تلقائيًا داخل السكربت
 if __name__ == "__main__":
-    new_account = {
-        "email": "rekardo647@gmail.com",
-        "password": "ntfersdmsxtivceg"
-    }
-
-    accounts = load_bot_accounts()
-
-    if not any(a["email"] == new_account["email"] for a in accounts):
-        accounts.append(new_account)
-        save_bot_accounts(accounts)
-        print(f"✅ تم إضافة الحساب {new_account['email']} تلقائيًا")
-    else:
-        print(f"⚠️ الحساب {new_account['email']} موجود مسبقًا")
-
-    # تشغيل البوت
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
