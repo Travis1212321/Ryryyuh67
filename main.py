@@ -6,8 +6,8 @@ from telegram.ext import (
 import json, imaplib, smtplib
 from email.mime.text import MIMEText
 
-OWNER_ID = 7753511487 # <-- غيّر دا للـ Telegram ID بتاعك
-BOT_TOKEN = "8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U"  # <-- غيّر دا لتوكن البوت
+OWNER_ID = 7753511487  # <-- غيّر دا بالـ Telegram ID بتاعك
+BOT_TOKEN = "8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U"  # <-- غيّر دا بتوكن البوت
 
 GET_EMAIL, GET_SUBJECT, GET_BODY = range(3)
 
@@ -111,11 +111,27 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("❌ تم الإلغاء.")
     return ConversationHandler.END
 
+# ✅ إضافة الحساب تلقائيًا داخل السكربت
 if __name__ == "__main__":
+    new_account = {
+        "email": "rekardo647@gmail.com",
+        "password": "c0960960221##"
+    }
+
+    accounts = load_bot_accounts()
+
+    if not any(a["email"] == new_account["email"] for a in accounts):
+        accounts.append(new_account)
+        save_bot_accounts(accounts)
+        print(f"✅ تم إضافة الحساب {new_account['email']} تلقائيًا")
+    else:
+        print(f"⚠️ الحساب {new_account['email']} موجود مسبقًا")
+
+    # تشغيل البوت
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
-    
+
     app.add_handler(ConversationHandler(
         entry_points=[MessageHandler(filters.TEXT & filters.Regex("📤 إرسال من الكل"), handle_message)],
         states={
