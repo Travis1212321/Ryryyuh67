@@ -1,163 +1,131 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler,
-    filters, ConversationHandler, ContextTypes
+    filters, ContextTypes, ConversationHandler
 )
-import json, os, imaplib, email
-from email.header import decode_header
-from crypto_utils import generate_key, encrypt_password, decrypt_password
+import json, imaplib, smtplib
+from email.mime.text import MIMEText
 
-generate_key()
-temp_data = {}
-ASK_EMAIL, ASK_PASSWORD = range(2)
+OWNER_ID =   # <-- غيّر دا للـ Telegram ID بتاعك
+BOT_TOKEN = "8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U"  # <-- غيّر دا لتوكن البوت
 
-welcome_text = """ بوت شد ايميلات جماعي
+GET_EMAIL, GET_SUBJECT, GET_BODY = range(3)
 
-🔐 تأكد إن معلوماتك بأمان، كلمات السر بنخزنها بشكل مشفر.
-الحقوق محفوظه في مكتب اوتـــو ✨ 
-📌 الأوامر:
-- 🔗 ربط حساب
-- 📂 حساباتي
-- ❌ حذف حساب
-- 📥 استلام
-- 📥 استلام من الكل
-- 📞 تواصل مع المطور"""
+def load_bot_accounts():
+    with open("accounts.json", "r") as f:
+        return json.load(f)
+
+def save_bot_accounts(accounts):
+    with open("accounts.json", "w") as f:
+        json.dump(accounts, f, indent=4)
+
+def send_email(from_email, password, to_email, subject, body):
+    msg = MIMEText(body)
+    msg["Subject"] = subject
+    msg["From"] = from_email
+    msg["To"] = to_email
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(from_email, password)
+        server.send_message(msg)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(welcome_text)
-    await inbox_menu(update, context)
+    user_id = update.effective_user.id
+    keyboard = []
 
-async def inbox_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        ["📥 استلام", "📥 استلام من الكل"],
-        ["📂 حساباتي", "❌ حذف حساب"],
-        ["📞 تواصل مع المطور"],
-        ["🔗 ربط حساب"]
-    ]
-    markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    await update.message.reply_text("اختر خيار من القائمة يا دباب:", reply_markup=markup)
+    if user_id == OWNER_ID:
+        keyboard = [
+            ["➕ إضافة حساب"],
+            ["📥 استلام من الكل", "📤 إرسال من الكل"]
+        ]
 
-async def link_account(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("📨 أرسل إيميل Gmail بتاعك:")
-    return ASK_EMAIL
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    await update.message.reply_text("أهلاً بيك في البوت 🤖", reply_markup=reply_markup)
 
-async def ask_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    email_text = update.message.text.strip()
-    if "@" not in email_text or not email_text.endswith("gmail.com"):
-        await update.message.reply_text("❌ الإيميل غير صحيح.")
-        return ASK_EMAIL
-    temp_data[update.effective_user.id] = {"email": email_text}
-    await update.message.reply_text("🔐 أرسل كلمة المرور:")
-    return ASK_PASSWORD
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    msg = update.message.text
 
-async def ask_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = str(update.effective_user.id)
-    email_ = temp_data[update.effective_user.id]["email"]
-    encrypted = encrypt_password(update.message.text)
+    if msg == "➕ إضافة حساب":
+        if user_id != OWNER_ID:
+            await update.message.reply_text("🚫 ما مسموح ليك.")
+            return
+        await update.message.reply_text("أرسل الإيميل وكلمة السر بصيغة:\n`email:password`", parse_mode="Markdown")
+        return
 
-    if not os.path.exists("users.json"):
-        with open("users.json", "w") as f:
-            json.dump({}, f)
+    if ":" in msg and user_id == OWNER_ID:
+        try:
+            email_, password_ = msg.split(":", 1)
+            accounts = load_bot_accounts()
+            accounts.append({"email": email_.strip(), "password": password_.strip()})
+            save_bot_accounts(accounts)
+            await update.message.reply_text(f"✅ تم إضافة الحساب: {email_}")
+        except Exception as e:
+            await update.message.reply_text(f"❌ فشل: {e}")
 
-    with open("users.json") as f:
-        data = json.load(f)
+    elif msg == "📥 استلام من الكل" and user_id == OWNER_ID:
+        await update.message.reply_text("🔄 جاري التحقق من الإيميلات...")
+        accounts = load_bot_accounts()
+        for acc in accounts:
+            try:
+                mail = imaplib.IMAP4_SSL("imap.gmail.com")
+                mail.login(acc["email"], acc["password"])
+                mail.select("inbox")
+                status, messages = mail.search(None, "ALL")
+                count = len(messages[0].split())
+                await update.message.reply_text(f"{acc['email']} فيه {count} رسالة.")
+                mail.logout()
+            except Exception as e:
+                await update.message.reply_text(f"❌ خطأ مع {acc['email']}: {e}")
 
-    if user_id not in data:
-        data[user_id] = []
+    elif msg == "📤 إرسال من الكل" and user_id == OWNER_ID:
+        await update.message.reply_text("📨 أرسل البريد المراد الإرسال إليه:")
+        return GET_EMAIL
 
-    data[user_id].append({"email": email_, "password": encrypted})
+async def get_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["to_email"] = update.message.text
+    await update.message.reply_text("📝 أرسل عنوان الرسالة (الموضوع):")
+    return GET_SUBJECT
 
-    with open("users.json", "w") as f:
-        json.dump(data, f, indent=2)
+async def get_subject(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["subject"] = update.message.text
+    await update.message.reply_text("✉️ أرسل نص الرسالة:")
+    return GET_BODY
 
-    await update.message.reply_text(f"✅ تم ربط الحساب {email_}.")
+async def get_body(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    to_email = context.user_data["to_email"]
+    subject = context.user_data["subject"]
+    body = update.message.text
+
+    accounts = load_bot_accounts()
+    for acc in accounts:
+        try:
+            send_email(acc["email"], acc["password"], to_email, subject, body)
+            await update.message.reply_text(f"✅ تم الإرسال من {acc['email']}")
+        except Exception as e:
+            await update.message.reply_text(f"❌ فشل من {acc['email']}: {e}")
+
     return ConversationHandler.END
 
-def get_last_emails(email_user, encrypted_password, limit=5):
-    try:
-        password = decrypt_password(encrypted_password)
-        mail = imaplib.IMAP4_SSL("imap.gmail.com")
-        mail.login(email_user, password)
-        mail.select("inbox")
-        _, msgnums = mail.search(None, "ALL")
-        ids = msgnums[0].split()[-limit:]
-        messages = []
-        for msg_id in ids[::-1]:
-            _, msg_data = mail.fetch(msg_id, "(RFC822)")
-            msg = email.message_from_bytes(msg_data[0][1])
-            subject = decode_header(msg["subject"])[0][0]
-            if isinstance(subject, bytes):
-                subject = subject.decode()
-            from_ = msg["from"]
-            messages.append(f"📩 {subject}\n👤 {from_}")
-        mail.logout()
-        return messages
-    except Exception as e:
-        return [f"❌ خطأ:\n{e}"]
+async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("❌ تم الإلغاء.")
+    return ConversationHandler.END
 
-async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = str(update.effective_user.id)
-    text = update.message.text.strip()
+if __name__ == "__main__":
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-    if not os.path.exists("users.json"):
-        with open("users.json", "w") as f:
-            json.dump({}, f)
+    app.add_handler(CommandHandler("start", start))
+    
+    app.add_handler(ConversationHandler(
+        entry_points=[MessageHandler(filters.TEXT & filters.Regex("📤 إرسال من الكل"), handle_message)],
+        states={
+            GET_EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_email)],
+            GET_SUBJECT: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_subject)],
+            GET_BODY: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_body)],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)]
+    ))
 
-    with open("users.json") as f:
-        data = json.load(f)
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    if text == "📥 استلام":
-        if user_id not in data or not data[user_id]:
-            await update.message.reply_text("❗ ما عندك حساب مربوط.")
-            return
-        acc = data[user_id][0]
-        msgs = get_last_emails(acc["email"], acc["password"])
-        await update.message.reply_text("\n\n".join(msgs[:5]))
-
-    elif text == "📥 استلام من الكل":
-        if user_id not in data or not data[user_id]:
-            await update.message.reply_text("❗ ما عندك حسابات.")
-            return
-        result = ""
-        for acc in data[user_id]:
-            msgs = get_last_emails(acc["email"], acc["password"], limit=1)
-            result += f"\n📬 {acc['email']}\n{msgs[0]}\n"
-        await update.message.reply_text(result or "📭 لا توجد رسائل.")
-
-    elif text == "📂 حساباتي":
-        if user_id not in data or not data[user_id]:
-            await update.message.reply_text("📭 ما عندك حسابات.")
-        else:
-            emails = [acc["email"] for acc in data[user_id]]
-            await update.message.reply_text("📂 حساباتك:\n" + "\n".join(emails))
-
-    elif text == "❌ حذف حساب":
-        if user_id in data:
-            del data[user_id]
-            with open("users.json", "w") as f:
-                json.dump(data, f, indent=2)
-            await update.message.reply_text("✅ تم حذف الحسابات.")
-        else:
-            await update.message.reply_text("📭 ما عندك حسابات.")
-
-    elif text == "📞 تواصل مع المطور":
-        await update.message.reply_text("📞 تواصل مع المطور: https://wa.me/+249126083647")
-
-# === تشغيل البوت ===
-app = ApplicationBuilder().token("8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U").build()
-
-# ⚠️ ترتيب handlers مهم جداً
-conv_handler = ConversationHandler(
-    entry_points=[MessageHandler(filters.Regex("🔗 ربط حساب"), link_account)],
-    states={
-        ASK_EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_email)],
-        ASK_PASSWORD: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_password)],
-    },
-    fallbacks=[]
-)
-
-app.add_handler(CommandHandler("start", start))
-app.add_handler(conv_handler)  # ضيفو أول
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))  # بعدو
-
-app.run_polling()
+    app.run_polling()
