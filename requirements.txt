@@ -1,0 +1,6 @@
+python-telegram-bot
+cryptography
+imaplib
+smtplib
+email
+telegram
