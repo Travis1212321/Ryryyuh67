@@ -56,7 +56,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
     )
 
-    await update.message.reply_text("اختر من القائمة:", reply_markup=reply_markup)
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="اختر من القائمة:",
+        reply_markup=reply_markup
+    )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
