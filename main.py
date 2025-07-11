@@ -9,14 +9,21 @@ from telegram.ext import (
 import imaplib, smtplib, email, json
 from email.mime.text import MIMEText
 
-OWNER_ID = 7753511487  # ← غيّر دا برقمك لو عايز
+OWNER_ID = 7753511487
 BOT_TOKEN = "8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U"
 
 GET_EMAIL, GET_SUBJECT, GET_BODY = range(3)
 
 ACCOUNTS = [
     {"email": "rekardo647@gmail.com", "password": "ntfersdmsxtivceg"},
-    # أضف حسابات زيادة هنا لو عايز
+    {"email": "waadaltom674@gmail.com", "password": "bglqqfvrybxotmdf"},
+    {"email": "rre383033@gmail.com", "password": "wnvbfjhtwrujronr"},
+    {"email": "jhh835443@gmail.com", "password": "orybkiajibsptqif"},
+    {"email": "ottofjfghh@gmail.com", "password": "qnebbkeyayqyidyz"},
+    {"email": "fufhfieudb@gmail.com", "password": "yjobyzcjjglglejp"},
+    {"email": "vjhmgkbx@gmail.com", "password": "ewqezwacmtrwiucx"},
+    {"email": "uyfy014@gmail.com", "password": "xyuprvnxlsjtpgbe"},
+    {"email": "ifihbndvkfytj@gmail.com", "password": "gquiduzoiuezmdjx"},
 ]
 
 def send_email(from_email, password, to_email, subject, body):
@@ -38,11 +45,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
-    # روابط الوسائط
     image_url = "https://files.catbox.moe/jt6lea.jpg"
     audio_url = "https://files.catbox.moe/2okh85.mp3"
 
-    # أرسل الوسائط
     await context.bot.send_media_group(
         chat_id=update.effective_chat.id,
         media=[
