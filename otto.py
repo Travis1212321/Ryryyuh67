@@ -1,6 +1,6 @@
 import asyncio from telegram import ( Update, ReplyKeyboardMarkup, InputMediaPhoto, InputMediaAudio ) from telegram.ext import ( ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler ) import imaplib, smtplib, email, json from email.mime.text import MIMEText
 
-OWNER_ID = 7753511487 BOT_TOKEN = "YOUR_BOT_TOKEN"
+OWNER_ID = 7753511487 BOT_TOKEN = "8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U"
 
 ACCOUNTS = [ {"email": "rre383033@gmail.com", "password": "wnvbfjhtwrujronr"}, {"email": "jhh835443@gmail.com", "password": "orybkiajibsptqif"}, {"email": "ottofjfghh@gmail.com", "password": "qnebbkeyayqyidyz"}, {"email": "fufhfieudb@gmail.com", "password": "yjobyzcjjglglejp"}, {"email": "vjhmgkbx@gmail.com", "password": "ewqezwacmtrwiucx"}, {"email": "uyfy014@gmail.com", "password": "xyuprvnxlsjtpgbe"}, {"email": "ifihbndvkfytj@gmail.com", "password": "gquiduzoiuezmdjx"} ]
 
