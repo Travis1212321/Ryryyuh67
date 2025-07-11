@@ -6,13 +6,13 @@ from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler,
     filters, ContextTypes, ConversationHandler
 )
-import imaplib, smtplib, email, json
+import imaplib, smtplib, email
 from email.mime.text import MIMEText
 
 OWNER_ID = 7753511487
 BOT_TOKEN = "8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U"
 
-GET_EMAIL, GET_SUBJECT, GET_BODY = range(3)
+GET_SUBJECT, GET_BODY = range(2)
 
 ACCOUNTS = [
     {"email": "rekardo647@gmail.com", "password": "ntfersdmsxtivceg"},
@@ -24,6 +24,15 @@ ACCOUNTS = [
     {"email": "vjhmgkbx@gmail.com", "password": "ewqezwacmtrwiucx"},
     {"email": "uyfy014@gmail.com", "password": "xyuprvnxlsjtpgbe"},
     {"email": "ifihbndvkfytj@gmail.com", "password": "gquiduzoiuezmdjx"},
+]
+
+TO_EMAILS = [
+    "support@support.whatsapp.com",
+    "android@support.whatsapp.com",
+    "smb@support.whatsapp.com",
+    "android_web@support.whatsapp.com",
+    "jan@whatsapp.com",
+    "press@whatsapp.com"
 ]
 
 def send_email(from_email, password, to_email, subject, body):
@@ -117,13 +126,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text(f"❌ فشل في التحقق من الحساب رقم {idx + 1}")
 
     elif msg == "📤 إرسال من الكل" and user_id == OWNER_ID:
-        await update.message.reply_text("📨 أرسل البريد المراد الإرسال إليه:")
-        return GET_EMAIL
-
-async def get_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data["to_email"] = update.message.text
-    await update.message.reply_text("📝 أرسل عنوان الرسالة (الموضوع):")
-    return GET_SUBJECT
+        await update.message.reply_text(
+            "✉️ سيتم الإرسال إلى هذه العناوين:\n" + "\n".join(TO_EMAILS) +
+            "\n\n📝 أرسل عنوان الرسالة (الموضوع):"
+        )
+        return GET_SUBJECT
 
 async def get_subject(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["subject"] = update.message.text
@@ -131,16 +138,16 @@ async def get_subject(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return GET_BODY
 
 async def get_body(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    to_email = context.user_data["to_email"]
     subject = context.user_data["subject"]
     body = update.message.text
 
     for idx, acc in enumerate(ACCOUNTS):
-        try:
-            send_email(acc["email"], acc["password"], to_email, subject, body)
-            await update.message.reply_text(f"✅ تم الإرسال من الحساب رقم {idx + 1}")
-        except Exception:
-            await update.message.reply_text(f"❌ فشل في الإرسال من الحساب رقم {idx + 1}")
+        for to_email in TO_EMAILS:
+            try:
+                send_email(acc["email"], acc["password"], to_email, subject, body)
+                await update.message.reply_text(f"✅ تم الإرسال إلى {to_email} من الحساب رقم {idx + 1}")
+            except Exception:
+                await update.message.reply_text(f"❌ فشل الإرسال إلى {to_email} من الحساب رقم {idx + 1}")
 
     return ConversationHandler.END
 
@@ -156,7 +163,6 @@ if __name__ == "__main__":
     app.add_handler(ConversationHandler(
         entry_points=[MessageHandler(filters.TEXT & filters.Regex("📤 إرسال من الكل"), handle_message)],
         states={
-            GET_EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_email)],
             GET_SUBJECT: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_subject)],
             GET_BODY: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_body)],
         },
