@@ -36,7 +36,7 @@ SERVER_LINKS = {
     "abuse@support.whatsapp.com": None
 }
 
-USER_SESSIONS = {}  # user_id -> {"server": email, "account": {email, password}}
+USER_SESSIONS = {}
 
 def send_email(from_email, password, to_email, subject, body):
     msg = MIMEText(body)
@@ -44,7 +44,7 @@ def send_email(from_email, password, to_email, subject, body):
     msg["From"] = from_email
     msg["To"] = to_email
 
-    with smtpllib.SMTP_SSL("smtp.gmail.com", 465) as server:
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(from_email, password)
         server.send_message(msg)
 
@@ -158,6 +158,10 @@ async def check_replies(app):
 
         await asyncio.sleep(60)
 
+# ✅ تعديل post_init لحل مشكلة RuntimeError
+async def post_init(app):
+    asyncio.create_task(check_replies(app))
+
 if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
@@ -174,5 +178,6 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("start", start))
     app.add_handler(conv)
 
-    app.post_init = lambda _: asyncio.create_task(check_replies(app))
+    app.post_init = post_init
     app.run_polling()
+    print("بوتك شغال زي الكسم ✨💗✅")
