@@ -1,3 +1,4 @@
+import os
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler,
@@ -6,14 +7,13 @@ from telegram.ext import (
 import smtplib
 from email.mime.text import MIMEText
 
-# بيانات البوت
-OWNER_ID = 7753511487
+# --- معلومات أساسية ---
+OWNER_ID = 7753511487  # ← غيّر ده برقمك لو عايز
 BOT_TOKEN = "8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U"
 
-# المراحل بتاعت المحادثة
 GET_EMAIL, GET_SUBJECT, GET_BODY = range(3)
 
-# الحسابات المرسلة
+# --- حسابات البريد المستخدمة للإرسال ---
 ACCOUNTS = [
     {"email": "rre383033@gmail.com", "password": "wnvbfjhtwrujronr"},
     {"email": "jhh835443@gmail.com", "password": "orybkiajibsptqif"},
@@ -24,7 +24,23 @@ ACCOUNTS = [
     {"email": "ifihbndvkfytj@gmail.com", "password": "gquiduzoiuezmdjx"},
 ]
 
-# دالة الإرسال عبر SMTP
+# --- قائمة السيرفرات (الإيميلات) الخاصة بفريق دعم واتساب ---
+SUPPORT_EMAILS = [
+    "support@support.whatsapp.com",
+    "android@support.whatsapp.com",
+    "smb@support.whatsapp.com",
+    "android_web@support.whatsapp.com",
+    "jan@whatsapp.com",
+    "press@whatsapp.com",
+    "server1@support.whatsapp.com",
+    "help@whatsapp.com",
+    "verify@support.whatsapp.com",
+    "web@support.whatsapp.com",
+    "email.support@whatsapp.com",
+    "response@support.whatsapp.com"
+]
+
+# --- دالة الإرسال ---
 def send_email(from_email, password, to_email, subject, body):
     msg = MIMEText(body)
     msg["Subject"] = subject
@@ -35,36 +51,35 @@ def send_email(from_email, password, to_email, subject, body):
         server.login(from_email, password)
         server.send_message(msg)
 
-# دالة /start
+# --- دالة البدء ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     keyboard = [["📤 إرسال من الكل"]] if user_id == OWNER_ID else []
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    
-    await update.message.reply_text("مرحب بيك في البوت! 👋", reply_markup=reply_markup)
+    await update.message.reply_text("اختر من القائمة:", reply_markup=reply_markup)
 
-# أول خطوة في الإرسال
+# --- عند الضغط على زر الإرسال ---
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     msg = update.message.text
 
     if msg == "📤 إرسال من الكل" and user_id == OWNER_ID:
-        await update.message.reply_text("📨 أرسل البريد المراد الإرسال إليه:")
+        await update.message.reply_text("📨 أرسل البريد المراد الإرسال إليه (من بين روابط دعم واتساب):")
         return GET_EMAIL
 
-# استلام البريد
+# --- الحصول على البريد ---
 async def get_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["to_email"] = update.message.text
     await update.message.reply_text("📝 أرسل عنوان الرسالة (الموضوع):")
     return GET_SUBJECT
 
-# استلام الموضوع
+# --- الحصول على الموضوع ---
 async def get_subject(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["subject"] = update.message.text
     await update.message.reply_text("✉️ أرسل نص الرسالة:")
     return GET_BODY
 
-# استلام الجسم وإرسال الرسالة
+# --- الحصول على نص الرسالة وإرسالها من كل الإيميلات ---
 async def get_body(update: Update, context: ContextTypes.DEFAULT_TYPE):
     to_email = context.user_data["to_email"]
     subject = context.user_data["subject"]
@@ -75,16 +90,16 @@ async def get_body(update: Update, context: ContextTypes.DEFAULT_TYPE):
             send_email(acc["email"], acc["password"], to_email, subject, body)
             await update.message.reply_text(f"✅ تم الإرسال من الحساب رقم {idx + 1}")
         except Exception as e:
-            await update.message.reply_text(f"❌ فشل من الحساب رقم {idx + 1}\n{e}")
+            await update.message.reply_text(f"❌ فشل في الإرسال من الحساب رقم {idx + 1}\n{str(e)}")
 
     return ConversationHandler.END
 
-# إلغاء
+# --- إلغاء العملية ---
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("❌ تم الإلغاء.")
     return ConversationHandler.END
 
-# التشغيل
+# --- تشغيل البوت ---
 if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
