@@ -13,7 +13,7 @@ from telegram.ext import (
 
 # --- معلومات أساسية ---
 OWNER_ID = 7753511487
-BOT_TOKEN = "8117880248:AAGHbJKDcn-KINHdMuzTAgRg0wUm--example"  # ← غيّري التوكن الحقيقي هنا
+BOT_TOKEN = "8117880248:AAGHbJKDcn-KINHdMuzTAgRg0wUm--example"  # ← غيّري التوكن هنا بالتوكن الحقيقي
 
 GET_EMAIL, GET_SUBJECT, GET_BODY = range(3)
 
@@ -267,5 +267,8 @@ async def main():
     asyncio.create_task(check_emails_periodically(app))
     await app.run_polling()
 
+# ✅ دعم بيئة Termux باستخدام nest_asyncio
 if __name__ == "__main__":
-    asyncio.run(main())
+    import nest_asyncio
+    nest_asyncio.apply()
+    asyncio.get_event_loop().run_until_complete(main())
