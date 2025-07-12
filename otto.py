@@ -13,7 +13,7 @@ from telegram.ext import (
 
 # --- معلومات أساسية ---
 OWNER_ID = 7753511487
-BOT_TOKEN = "8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U"
+BOT_TOKEN = "8117880248:AAGHbJKDcn-KINHdMuzTAgRg0wUm--example"  # ← غيّري التوكن لو احتجتي
 
 GET_EMAIL, GET_SUBJECT, GET_BODY = range(3)
 
@@ -52,11 +52,10 @@ SUPPORT_EMAILS = [
     "press@whatsapp.com",
 ]
 
-# --- إعداد تتبع الردود ---
+# --- تتبع الردود ---
 last_uids = {}
 email_to_server_index = {acc["email"]: idx for idx, acc in enumerate(ACCOUNTS)}
 
-# --- فك تشفير العناوين ---
 def decode_mime_words(s):
     decoded_fragments = []
     for word, charset in decode_header(s):
@@ -105,9 +104,8 @@ async def check_emails_periodically(app):
                         if isinstance(response_part, tuple):
                             msg = email.message_from_bytes(response_part[1])
                             subject = decode_mime_words(msg["Subject"])
-                            from_ = decode_mime_words(msg["From"])
-
                             body = ""
+
                             if msg.is_multipart():
                                 for part in msg.walk():
                                     if part.get_content_type() == "text/plain":
@@ -151,7 +149,7 @@ def send_email(from_email, password, to_email, subject, body):
         server.login(from_email, password)
         server.send_message(msg)
 
-# --- عرض السيرفرات ---
+# --- عرض قائمة السيرفرات ---
 async def show_server_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buttons = []
     row = []
@@ -166,13 +164,13 @@ async def show_server_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if row:
         buttons.append(row)
 
-    buttons.append([KeyboardButton("👑 المطوّر")])
+    buttons.append([KeyboardButton("التواصل مع المطور اوتـو🌹")])
     buttons.append([KeyboardButton("🔙 رجوع"), KeyboardButton("❌ إلغاء")])
 
     reply_markup = ReplyKeyboardMarkup(buttons, resize_keyboard=True)
     await update.message.reply_text("📨 اختر السيرفر المراد الإرسال إليه:", reply_markup=reply_markup)
 
-# --- أوامر البوت ---
+# --- وظائف البوت ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if user_id != OWNER_ID:
@@ -185,7 +183,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(
         "🌟 عملتة ليكم البوت دا عشان يساعدكم تشدو في ارقامكم المحظورة ..\n"
-        "كل الحقوق محفوظة لمكتب:\n🏛️ 𝐎𝐓𝐓𝐎² • اوتـــــو 󱢏"
+        "كل الحقوق محفوظة لمكتب:\n🏛️ 𝐎𝐓𝐓𝐎² • اوتـــــو "
     )
     await show_server_menu(update, context)
     return GET_EMAIL
@@ -193,8 +191,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def get_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected = update.message.text.strip()
 
-    if selected == "👑 المطوّر":
-        await update.message.reply_text("👑 هذا البوت تم تطويره بواسطة مكتب 𝐎𝐓𝐓𝐎² • اوتـــــو 󱢏")
+    if selected == "التواصل مع المطور اوتـو🌹":
+        await update.message.reply_text("📞 تواصل مع المطوّر عبر واتساب:\nwa.me/249126083647")
         return GET_EMAIL
 
     if selected == "🔙 رجوع":
@@ -202,14 +200,14 @@ async def get_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return GET_EMAIL
 
     if selected == "❌ إلغاء":
-        await update.message.reply_text("❌ تم الإلغاء. ارجع بأمر /start.")
+        await update.message.reply_text("❌ تم الإلغاء. ابدأ مجددًا بالأمر /start.")
         return ConversationHandler.END
 
     if "سيرفر" in selected:
         try:
             index = int(selected.split(" ")[1]) - 1
             if index in context.bot_data.get("busy_servers", set()):
-                await update.message.reply_text("⚠️ هذا السيرفر مشغول حالياً بانتظار الرد من واتساب.")
+                await update.message.reply_text("⚠️ السيرفر مشغول بانتظار الرد من واتساب.")
                 return GET_EMAIL
 
             context.user_data["to_email"] = SUPPORT_EMAILS[index]
@@ -232,7 +230,6 @@ async def get_body(update: Update, context: ContextTypes.DEFAULT_TYPE):
     subject = context.user_data["subject"]
     body = update.message.text
     index = context.user_data.get("server_index")
-
     success = False
 
     for idx, acc in enumerate(ACCOUNTS):
@@ -253,8 +250,8 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("❌ تم الإلغاء.")
     return ConversationHandler.END
 
-# --- تشغيل البوت ---
-if __name__ == "__main__":
+# --- تشغيل البوت بشكل آمن ---
+async def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(ConversationHandler(
@@ -268,4 +265,7 @@ if __name__ == "__main__":
     ))
 
     asyncio.create_task(check_emails_periodically(app))
-    app.run_polling()
+    await app.run_polling()
+
+if __name__ == "__main__":
+    asyncio.run(main())
