@@ -90,7 +90,7 @@ async def check_emails_periodically(app):
                 last_seen_uid = last_uids.get(acc["email"])
                 new_msg_id = None
                 for msg_id in reversed(msg_ids):
-                    if msg_id > last_seen_uid:
+                    if last_seen_uid is None or msg_id > last_seen_uid:
                         new_msg_id = msg_id
                         break
 
@@ -164,7 +164,7 @@ async def show_server_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if row:
         buttons.append(row)
 
-    buttons.append([KeyboardButton("التواصل مع المطور اوتـو🌹")])
+    buttons.append([KeyboardButton("👑 المطوّر")])
     buttons.append([KeyboardButton("🔙 رجوع"), KeyboardButton("❌ إلغاء")])
 
     reply_markup = ReplyKeyboardMarkup(buttons, resize_keyboard=True)
@@ -183,7 +183,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(
         "🌟 عملتة ليكم البوت دا عشان يساعدكم تشدو في ارقامكم المحظورة ..\n"
-        "كل الحقوق محفوظة لمكتب:\n🏛️ 𝐎𝐓𝐓𝐎² • اوتـــــو "
+        "كل الحقوق محفوظة لمكتب:\n🏛️ 𝐎𝐓𝐓𝐎² • اوتـــــو 󱢏"
     )
     await show_server_menu(update, context)
     return GET_EMAIL
@@ -191,8 +191,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def get_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected = update.message.text.strip()
 
-    if selected == "التواصل مع المطور اوتـو🌹":
-        await update.message.reply_text("📞 تواصل مع المطوّر عبر واتساب:\nwa.me/249126083647")
+    if selected == "👑 المطوّر":
+        await update.message.reply_text("📞 تواصل مع المطوّر عبر واتساب:\nwa.me/201234567890")
         return GET_EMAIL
 
     if selected == "🔙 رجوع":
@@ -250,7 +250,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("❌ تم الإلغاء.")
     return ConversationHandler.END
 
-# --- تشغيل البوت بشكل آمن ---
+# --- تشغيل البوت في Termux ---
 async def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
@@ -268,4 +268,9 @@ async def main():
     await app.run_polling()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        loop = asyncio.get_event_loop()
+        loop.create_task(main())
+        loop.run_forever()
+    except KeyboardInterrupt:
+        print("❌ تم إيقاف البوت.")
