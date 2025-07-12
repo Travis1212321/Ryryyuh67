@@ -70,9 +70,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🌟 عملتة ليكم البوت دا عشان يساعدكم تشدو في ارقامكم المحظورة ..\n"
         "كل الحقوق محفوظة لمكتب:\n"
-        "🏛️ 𝐎𝐓𝐓𝐎² • اوتـــــو 󱢏"
-    )
-
+        "🏛️ 𝐎𝐓𝐓𝐎² • اوتـــــو"
+               )
     # أزرار السيرفرات + زر المطور
     buttons = []
     row = []
