@@ -11,7 +11,7 @@ import imaplib, smtplib, email, json
 from email.mime.text import MIMEText
 
 OWNER_ID = 7753511487
-BOT_TOKEN = "8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U"
+BOT_TOKEN = "7709193212:AAEnLV4fkqmqISRDWWUy-7WjNE1N0LUoYWA"
 
 ACCOUNTS = [
     {"email": "rre383033@gmail.com", "password": "wnvbfjhtwrujronr"},
