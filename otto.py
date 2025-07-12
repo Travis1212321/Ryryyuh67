@@ -13,7 +13,7 @@ from telegram.ext import (
 
 # --- معلومات أساسية ---
 OWNER_ID = 7753511487
-BOT_TOKEN = "توكن_البوت"
+BOT_TOKEN = "8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U"
 
 GET_EMAIL, GET_SUBJECT, GET_BODY = range(3)
 
