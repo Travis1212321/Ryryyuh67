@@ -59,21 +59,21 @@ def send_email(from_email, password, to_email, subject, body):
         server.login(from_email, password)
         server.send_message(msg)
 
-# --- دالة البدء (start) ---
+# --- دالة البدء ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if user_id != OWNER_ID:
         await update.message.reply_text("❌ غير مصرح لك باستخدام هذا البوت.")
         return ConversationHandler.END
 
-    # ✅ رسالة ترحيبية
+    # رسالة ترحيبية
     await update.message.reply_text(
         "🌟 عملتة ليكم البوت دا عشان يساعدكم تشدو في ارقامكم المحظورة ..\n"
         "كل الحقوق محفوظة لمكتب:\n"
         "🏛️ 𝐎𝐓𝐓𝐎² • اوتـــــو 󱢏"
     )
 
-    # ✅ أزرار السيرفرات + زر المطور
+    # أزرار السيرفرات + زر المطور
     buttons = []
     row = []
     for i in range(len(SUPPORT_EMAILS)):
@@ -84,26 +84,28 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if row:
         buttons.append(row)
 
-    # زر المطور في آخر صف
     buttons.append([KeyboardButton("👑 المطوّر")])
 
     reply_markup = ReplyKeyboardMarkup(buttons, resize_keyboard=True)
     await update.message.reply_text("📨 اختر السيرفر المراد الإرسال إليه:", reply_markup=reply_markup)
     return GET_EMAIL
 
-# --- اختيار السيرفر (استخراج الإيميل من الزر) ---
+# --- اختيار السيرفر أو المطور ---
 async def get_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected = update.message.text.strip()
+
+    # زر المطوّر
+    if "المطوّر" in selected:
+        await update.message.reply_text("👑 هذا البوت تم تطويره بواسطة مكتب 𝐎𝐓𝐓𝐎² • اوتـــــو 󱢏")
+        return GET_EMAIL
+
+    # زر السيرفر
     if "سيرفر" in selected:
-        try:
-            num = ''.join(filter(str.isdigit, selected))
-            index = int(num) - 1
-            if 0 <= index < len(SUPPORT_EMAILS):
-                context.user_data["to_email"] = SUPPORT_EMAILS[index]
+        for i in range(1, len(SUPPORT_EMAILS) + 1):
+            if f"سيرفر {i}" in selected:
+                context.user_data["to_email"] = SUPPORT_EMAILS[i - 1]
                 await update.message.reply_text("📝 أرسل عنوان الرسالة (الموضوع):")
                 return GET_SUBJECT
-        except:
-            pass
 
     await update.message.reply_text("❌ اختيار غير صالح. أعد المحاولة.")
     return GET_EMAIL
@@ -114,7 +116,7 @@ async def get_subject(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("✉️ أرسل نص الرسالة:")
     return GET_BODY
 
-# --- إرسال الرسالة ---
+# --- الرسالة ---
 async def get_body(update: Update, context: ContextTypes.DEFAULT_TYPE):
     to_email = context.user_data["to_email"]
     subject = context.user_data["subject"]
