@@ -1,3 +1,4 @@
+
 import os
 import smtplib
 import imaplib
@@ -11,13 +12,13 @@ from telegram.ext import (
     filters, ContextTypes, ConversationHandler
 )
 
-# --- معلومات أساسية ---
+# --- Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø£Ø³Ø§Ø³ÙŠØ© ---
 OWNER_ID = 7753511487
-BOT_TOKEN = "8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U"  # ← غيّري التوكن هنا بالتوكن الحقيقي
+BOT_TOKEN = "8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U"
 
 GET_EMAIL, GET_SUBJECT, GET_BODY = range(3)
 
-# --- حسابات البريد المستخدمة للإرسال ---
+# --- Ø­Ø³Ø§Ø¨Ø§Øª Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…Ø© Ù„Ù„Ø¥Ø±Ø³Ø§Ù„ ---
 ACCOUNTS = [
     {"email": "rre383033@gmail.com", "password": "wnvbfjhtwrujronr"},
     {"email": "jhh835443@gmail.com", "password": "orybkiajibsptqif"},
@@ -28,7 +29,7 @@ ACCOUNTS = [
     {"email": "ifihbndvkfytj@gmail.com", "password": "gquiduzoiuezmdjx"},
 ]
 
-# --- إيميلات دعم واتساب ---
+# --- Ø¥ÙŠÙ…ÙŠÙ„Ø§Øª Ø¯Ø¹Ù… ÙˆØ§ØªØ³Ø§Ø¨ ---
 SUPPORT_EMAILS = [
     "support@support.whatsapp.com",
     "android@support.whatsapp.com",
@@ -52,7 +53,7 @@ SUPPORT_EMAILS = [
     "press@whatsapp.com",
 ]
 
-# --- تتبع الردود ---
+# --- ØªØªØ¨Ø¹ Ø§Ù„Ø±Ø¯ÙˆØ¯ ---
 last_uids = {}
 email_to_server_index = {acc["email"]: idx for idx, acc in enumerate(ACCOUNTS)}
 
@@ -68,7 +69,7 @@ def decode_mime_words(s):
             decoded_fragments.append(word)
     return ''.join(decoded_fragments)
 
-# --- فحص البريد كل دقيقة ---
+# --- ÙØ­Øµ Ø§Ù„Ø¨Ø±ÙŠØ¯ ÙƒÙ„ Ø¯Ù‚ÙŠÙ‚Ø© ---
 async def check_emails_periodically(app):
     while True:
         for idx, acc in enumerate(ACCOUNTS):
@@ -121,10 +122,10 @@ async def check_emails_periodically(app):
                             await app.bot.send_message(
                                 chat_id=OWNER_ID,
                                 text=(
-                                    f"\n📬 *وصل رد جديد من واتساب*\n"
-                                    f"🔢 الحساب رقم: {idx + 1}\n"
-                                    f"✉️ الموضوع: {subject}\n\n"
-                                    f"📨 الرسالة:\n{body[:2000]}"
+                                    f"\nðŸ“¬ *ÙˆØµÙ„ Ø±Ø¯ Ø¬Ø¯ÙŠØ¯ Ù…Ù† ÙˆØ§ØªØ³Ø§Ø¨*\n"
+                                    f"ðŸ”¢ Ø§Ù„Ø­Ø³Ø§Ø¨ Ø±Ù‚Ù…: {idx + 1}\n"
+                                    f"âœ‰ï¸ Ø§Ù„Ù…ÙˆØ¶ÙˆØ¹: {subject}\n\n"
+                                    f"ðŸ“¨ Ø§Ù„Ø±Ø³Ø§Ù„Ø©:\n{body[:2000]}"
                                 ),
                                 parse_mode="Markdown"
                             )
@@ -134,11 +135,11 @@ async def check_emails_periodically(app):
                 imap.logout()
 
             except Exception as e:
-                print(f"📋 خطأ أثناء التحقق من بريد {acc['email']}: {e}")
+                print(f"ðŸ“‹ Ø®Ø·Ø£ Ø£Ø«Ù†Ø§Ø¡ Ø§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† Ø¨Ø±ÙŠØ¯ {acc['email']}: {e}")
 
         await asyncio.sleep(60)
 
-# --- إرسال البريد ---
+# --- Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø¨Ø±ÙŠØ¯ ---
 def send_email(from_email, password, to_email, subject, body):
     msg = MIMEText(body)
     msg["Subject"] = subject
@@ -149,7 +150,7 @@ def send_email(from_email, password, to_email, subject, body):
         server.login(from_email, password)
         server.send_message(msg)
 
-# --- عرض قائمة السيرفرات ---
+# --- Ø¹Ø±Ø¶ Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø³ÙŠØ±ÙØ±Ø§Øª ---
 async def show_server_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buttons = []
     row = []
@@ -157,24 +158,24 @@ async def show_server_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     for i in range(len(SUPPORT_EMAILS)):
         if i not in busy_servers:
-            row.append(KeyboardButton(f"🔥 سيرفر {i + 1} 🌹"))
+            row.append(KeyboardButton(f"ðŸ”¥ Ø³ÙŠØ±ÙØ± {i + 1} ðŸŒ¹"))
             if len(row) == 3:
                 buttons.append(row)
                 row = []
     if row:
         buttons.append(row)
 
-    buttons.append([KeyboardButton("👑 المطوّر")])
-    buttons.append([KeyboardButton("🔙 رجوع"), KeyboardButton("❌ إلغاء")])
+    buttons.append([KeyboardButton("ðŸ‘‘ Ø§Ù„Ù…Ø·ÙˆÙ‘Ø±")])
+    buttons.append([KeyboardButton("ðŸ”™ Ø±Ø¬ÙˆØ¹"), KeyboardButton("âŒ Ø¥Ù„ØºØ§Ø¡")])
 
     reply_markup = ReplyKeyboardMarkup(buttons, resize_keyboard=True)
-    await update.message.reply_text("📨 اختر السيرفر المراد الإرسال إليه:", reply_markup=reply_markup)
+    await update.message.reply_text("ðŸ“¨ Ø§Ø®ØªØ± Ø§Ù„Ø³ÙŠØ±ÙØ± Ø§Ù„Ù…Ø±Ø§Ø¯ Ø§Ù„Ø¥Ø±Ø³Ø§Ù„ Ø¥Ù„ÙŠÙ‡:", reply_markup=reply_markup)
 
-# --- وظائف البوت ---
+# --- ÙˆØ¸Ø§Ø¦Ù Ø§Ù„Ø¨ÙˆØª ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if user_id != OWNER_ID:
-        await update.message.reply_text("❌ غير مصرح لك باستخدام هذا البوت.")
+        await update.message.reply_text("âŒ ØºÙŠØ± Ù…ØµØ±Ø­ Ù„Ùƒ Ø¨Ø§Ø³ØªØ®Ø¯Ø§Ù… Ù‡Ø°Ø§ Ø§Ù„Ø¨ÙˆØª.")
         return ConversationHandler.END
 
     context.user_data.clear()
@@ -182,8 +183,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.bot_data["busy_servers"] = set()
 
     await update.message.reply_text(
-        "🌟 عملتة ليكم البوت دا عشان يساعدكم تشدو في ارقامكم المحظورة ..\n"
-        "كل الحقوق محفوظة لمكتب:\n🏛️ 𝐘𝐓𝐓𝐍 • اوتـــــو 🔏"
+        "ðŸŒŸ Ø¹Ù…Ù„ØªØ© Ù„ÙŠÙƒÙ… Ø§Ù„Ø¨ÙˆØª Ø¯Ø§ Ø¹Ø´Ø§Ù† ÙŠØ³Ø§Ø¹Ø¯ÙƒÙ… ØªØ´Ø¯Ùˆ ÙÙŠ Ø§Ø±Ù‚Ø§Ù…ÙƒÙ… Ø§Ù„Ù…Ø­Ø¸ÙˆØ±Ø© ..\n"
+        "ÙƒÙ„ Ø§Ù„Ø­Ù‚ÙˆÙ‚ Ù…Ø­ÙÙˆØ¸Ø© Ù„Ù…ÙƒØªØ¨:\nðŸ›ï¸ ð˜ð“ð“ð â€¢ Ø§ÙˆØªÙ€Ù€Ù€Ù€Ù€Ùˆ ðŸ”"
     )
     await show_server_menu(update, context)
     return GET_EMAIL
@@ -191,38 +192,42 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def get_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected = update.message.text.strip()
 
-    if selected == "👑 المطوّر":
-        await update.message.reply_text("📞 تواصل مع المطوّر عبر واتساب:\nhttps://wa.me/201234567890")
+    if selected == "ðŸ‘‘ Ø§Ù„Ù…Ø·ÙˆÙ‘Ø±":
+        await update.message.reply_text("ðŸ“ž ØªÙˆØ§ØµÙ„ Ù…Ø¹ Ø§Ù„Ù…Ø·ÙˆÙ‘Ø± Ø¹Ø¨Ø± ÙˆØ§ØªØ³Ø§Ø¨:\nhttps://wa.me/201234567890")
         return GET_EMAIL
 
-    if selected == "🔙 رجوع":
+    if selected == "ðŸ”™ Ø±Ø¬ÙˆØ¹":
         await show_server_menu(update, context)
         return GET_EMAIL
 
-    if selected == "❌ إلغاء":
-        await update.message.reply_text("❌ تم الإلغاء. ابدأ مجددًا بالأمر /start.")
+    if selected == "âŒ Ø¥Ù„ØºØ§Ø¡":
+        await update.message.reply_text("âŒ ØªÙ… Ø§Ù„Ø¥Ù„ØºØ§Ø¡. Ø§Ø¨Ø¯Ø£ Ù…Ø¬Ø¯Ø¯Ù‹Ø§ Ø¨Ø§Ù„Ø£Ù…Ø± /start.")
         return ConversationHandler.END
 
-    if "سيرفر" in selected:
+    if selected.startswith("ðŸ”¥ Ø³ÙŠØ±ÙØ±") and selected.endswith("ðŸŒ¹"):
         try:
-            index = int(selected.split(" ")[1]) - 1
+            number = selected.replace("ðŸ”¥ Ø³ÙŠØ±ÙØ±", "").replace("ðŸŒ¹", "").strip()
+            index = int(number) - 1
+
             if index in context.bot_data.get("busy_servers", set()):
-                await update.message.reply_text("⚠️ السيرفر مشغول بانتظار الرد من واتساب.")
+                await update.message.reply_text("âš ï¸ Ø§Ù„Ø³ÙŠØ±ÙØ± Ù…Ø´ØºÙˆÙ„ Ø¨Ø§Ù†ØªØ¸Ø§Ø± Ø§Ù„Ø±Ø¯ Ù…Ù† ÙˆØ§ØªØ³Ø§Ø¨.")
                 return GET_EMAIL
 
             context.user_data["to_email"] = SUPPORT_EMAILS[index]
             context.user_data["server_index"] = index
-            await update.message.reply_text("📝 أرسل عنوان الرسالة (الموضوع):")
+            await update.message.reply_text("ðŸ“ Ø£Ø±Ø³Ù„ Ø¹Ù†ÙˆØ§Ù† Ø§Ù„Ø±Ø³Ø§Ù„Ø© (Ø§Ù„Ù…ÙˆØ¶ÙˆØ¹):")
             return GET_SUBJECT
-        except:
-            pass
 
-    await update.message.reply_text("❌ اختيار غير صالح. أعد المحاولة.")
+        except Exception as e:
+            await update.message.reply_text("âŒ Ø­Ø¯Ø« Ø®Ø·Ø£ ÙÙŠ Ø§Ø®ØªÙŠØ§Ø± Ø§Ù„Ø³ÙŠØ±ÙØ±.")
+            return GET_EMAIL
+
+    await update.message.reply_text("âŒ Ø§Ø®ØªÙŠØ§Ø± ØºÙŠØ± ØµØ§Ù„Ø­. Ø£Ø¹Ø¯ Ø§Ù„Ù…Ø­Ø§ÙˆÙ„Ø©.")
     return GET_EMAIL
 
 async def get_subject(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["subject"] = update.message.text
-    await update.message.reply_text("✉️ أرسل نص الرسالة:")
+    await update.message.reply_text("âœ‰ï¸ Ø£Ø±Ø³Ù„ Ù†Øµ Ø§Ù„Ø±Ø³Ø§Ù„Ø©:")
     return GET_BODY
 
 async def get_body(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -235,22 +240,22 @@ async def get_body(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for idx, acc in enumerate(ACCOUNTS):
         try:
             send_email(acc["email"], acc["password"], to_email, subject, body)
-            await update.message.reply_text(f"✅ تم الإرسال من الحساب رقم {idx + 1}")
+            await update.message.reply_text(f"âœ… ØªÙ… Ø§Ù„Ø¥Ø±Ø³Ø§Ù„ Ù…Ù† Ø§Ù„Ø­Ø³Ø§Ø¨ Ø±Ù‚Ù… {idx + 1}")
             success = True
         except Exception as e:
-            await update.message.reply_text(f"❌ فشل من الحساب رقم {idx + 1}\n{str(e)}")
+            await update.message.reply_text(f"âŒ ÙØ´Ù„ Ù…Ù† Ø§Ù„Ø­Ø³Ø§Ø¨ Ø±Ù‚Ù… {idx + 1}\n{str(e)}")
 
     if success and index is not None:
         context.bot_data["busy_servers"].add(index)
-        await update.message.reply_text("📋 السيرفر الآن مشغول لحين وصول رد من واتساب.")
+        await update.message.reply_text("ðŸ“‹ Ø§Ù„Ø³ÙŠØ±ÙØ± Ø§Ù„Ø¢Ù† Ù…Ø´ØºÙˆÙ„ Ù„Ø­ÙŠÙ† ÙˆØµÙˆÙ„ Ø±Ø¯ Ù…Ù† ÙˆØ§ØªØ³Ø§Ø¨.")
 
     return ConversationHandler.END
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("❌ تم الإلغاء.")
+    await update.message.reply_text("âŒ ØªÙ… Ø§Ù„Ø¥Ù„ØºØ§Ø¡.")
     return ConversationHandler.END
 
-# --- تشغيل البوت ---
+# --- ØªØ´ØºÙŠÙ„ Ø§Ù„Ø¨ÙˆØª ---
 async def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
@@ -267,7 +272,6 @@ async def main():
     asyncio.create_task(check_emails_periodically(app))
     await app.run_polling()
 
-# ✅ دعم بيئة Termux باستخدام nest_asyncio
 if __name__ == "__main__":
     import nest_asyncio
     nest_asyncio.apply()
