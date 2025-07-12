@@ -1,5 +1,5 @@
 import os
-from telegram import Update, ReplyKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler,
     filters, ContextTypes, ConversationHandler
@@ -24,20 +24,28 @@ ACCOUNTS = [
     {"email": "ifihbndvkfytj@gmail.com", "password": "gquiduzoiuezmdjx"},
 ]
 
-# --- قائمة السيرفرات (الإيميلات) الخاصة بفريق دعم واتساب ---
+# --- جميع إيميلات دعم واتساب ---
 SUPPORT_EMAILS = [
     "support@support.whatsapp.com",
     "android@support.whatsapp.com",
     "smb@support.whatsapp.com",
     "android_web@support.whatsapp.com",
-    "jan@whatsapp.com",
-    "press@whatsapp.com",
-    "server1@support.whatsapp.com",
-    "help@whatsapp.com",
-    "verify@support.whatsapp.com",
+    "ios@support.whatsapp.com",
+    "payments@support.whatsapp.com",
+    "security@support.whatsapp.com",
+    "report@support.whatsapp.com",
+    "business@support.whatsapp.com",
     "web@support.whatsapp.com",
     "email.support@whatsapp.com",
-    "response@support.whatsapp.com"
+    "response@support.whatsapp.com",
+    "verify@support.whatsapp.com",
+    "server1@support.whatsapp.com",
+    "server2@support.whatsapp.com",
+    "help@whatsapp.com",
+    "support@whatsapp.com",
+    "feedback@support.whatsapp.com",
+    "jan@whatsapp.com",
+    "press@whatsapp.com",
 ]
 
 # --- دالة الإرسال ---
@@ -64,22 +72,44 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message.text
 
     if msg == "📤 إرسال من الكل" and user_id == OWNER_ID:
-        await update.message.reply_text("📨 أرسل البريد المراد الإرسال إليه (من بين روابط دعم واتساب):")
+        # إنشاء أزرار السيرفرات: 3 في كل صف
+        buttons = []
+        row = []
+        for i in range(len(SUPPORT_EMAILS)):
+            row.append(KeyboardButton(f"سيرفر {i + 1}"))
+            if len(row) == 3:
+                buttons.append(row)
+                row = []
+        if row:
+            buttons.append(row)
+
+        reply_markup = ReplyKeyboardMarkup(buttons, resize_keyboard=True)
+        await update.message.reply_text("📨 اختر السيرفر المراد الإرسال إليه:", reply_markup=reply_markup)
         return GET_EMAIL
 
-# --- الحصول على البريد ---
+# --- الحصول على البريد (من اختيار السيرفر) ---
 async def get_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data["to_email"] = update.message.text
-    await update.message.reply_text("📝 أرسل عنوان الرسالة (الموضوع):")
-    return GET_SUBJECT
+    selected = update.message.text.strip()
+    if selected.startswith("سيرفر"):
+        try:
+            index = int(selected.split(" ")[1]) - 1
+            if 0 <= index < len(SUPPORT_EMAILS):
+                context.user_data["to_email"] = SUPPORT_EMAILS[index]
+                await update.message.reply_text("📝 أرسل عنوان الرسالة (الموضوع):")
+                return GET_SUBJECT
+        except:
+            pass
 
-# --- الحصول على الموضوع ---
+    await update.message.reply_text("❌ اختيار غير صالح. أعد المحاولة.")
+    return GET_EMAIL
+
+# --- الحصول على عنوان الرسالة ---
 async def get_subject(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["subject"] = update.message.text
     await update.message.reply_text("✉️ أرسل نص الرسالة:")
     return GET_BODY
 
-# --- الحصول على نص الرسالة وإرسالها من كل الإيميلات ---
+# --- الحصول على نص الرسالة وإرسالها من جميع الحسابات ---
 async def get_body(update: Update, context: ContextTypes.DEFAULT_TYPE):
     to_email = context.user_data["to_email"]
     subject = context.user_data["subject"]
