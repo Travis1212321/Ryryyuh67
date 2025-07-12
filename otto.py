@@ -8,7 +8,7 @@ import smtplib
 from email.mime.text import MIMEText
 
 # --- معلومات أساسية ---
-OWNER_ID = 7753511487  # ← غيّر ده برقمك لو عايز
+OWNER_ID = 7753511487
 BOT_TOKEN = "8117880248:AAHWSYLfnbSlnO0UlVBlGJmmpCoH_Z_1O9U"
 
 GET_EMAIL, GET_SUBJECT, GET_BODY = range(3)
@@ -59,40 +59,45 @@ def send_email(from_email, password, to_email, subject, body):
         server.login(from_email, password)
         server.send_message(msg)
 
-# --- دالة البدء ---
+# --- دالة البدء (start) ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    keyboard = [["📤 إرسال من الكل"]] if user_id == OWNER_ID else []
-    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    await update.message.reply_text("اختر من القائمة:", reply_markup=reply_markup)
+    if user_id != OWNER_ID:
+        await update.message.reply_text("❌ غير مصرح لك باستخدام هذا البوت.")
+        return ConversationHandler.END
 
-# --- عند الضغط على زر الإرسال ---
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    msg = update.message.text
+    # ✅ رسالة ترحيبية
+    await update.message.reply_text(
+        "🌟 عملتة ليكم البوت دا عشان يساعدكم تشدو في ارقامكم المحظورة ..\n"
+        "كل الحقوق محفوظة لمكتب:\n"
+        "🏛️ 𝐎𝐓𝐓𝐎² • اوتـــــو 󱢏"
+    )
 
-    if msg == "📤 إرسال من الكل" and user_id == OWNER_ID:
-        # إنشاء أزرار السيرفرات: 3 في كل صف
-        buttons = []
-        row = []
-        for i in range(len(SUPPORT_EMAILS)):
-            row.append(KeyboardButton(f"سيرفر {i + 1}"))
-            if len(row) == 3:
-                buttons.append(row)
-                row = []
-        if row:
+    # ✅ أزرار السيرفرات + زر المطور
+    buttons = []
+    row = []
+    for i in range(len(SUPPORT_EMAILS)):
+        row.append(KeyboardButton(f"🔥 سيرفر {i + 1} 🌹"))
+        if len(row) == 3:
             buttons.append(row)
+            row = []
+    if row:
+        buttons.append(row)
 
-        reply_markup = ReplyKeyboardMarkup(buttons, resize_keyboard=True)
-        await update.message.reply_text("📨 اختر السيرفر المراد الإرسال إليه:", reply_markup=reply_markup)
-        return GET_EMAIL
+    # زر المطور في آخر صف
+    buttons.append([KeyboardButton("👑 المطوّر")])
 
-# --- الحصول على البريد (من اختيار السيرفر) ---
+    reply_markup = ReplyKeyboardMarkup(buttons, resize_keyboard=True)
+    await update.message.reply_text("📨 اختر السيرفر المراد الإرسال إليه:", reply_markup=reply_markup)
+    return GET_EMAIL
+
+# --- اختيار السيرفر (استخراج الإيميل من الزر) ---
 async def get_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected = update.message.text.strip()
-    if selected.startswith("سيرفر"):
+    if "سيرفر" in selected:
         try:
-            index = int(selected.split(" ")[1]) - 1
+            num = ''.join(filter(str.isdigit, selected))
+            index = int(num) - 1
             if 0 <= index < len(SUPPORT_EMAILS):
                 context.user_data["to_email"] = SUPPORT_EMAILS[index]
                 await update.message.reply_text("📝 أرسل عنوان الرسالة (الموضوع):")
@@ -103,13 +108,13 @@ async def get_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("❌ اختيار غير صالح. أعد المحاولة.")
     return GET_EMAIL
 
-# --- الحصول على عنوان الرسالة ---
+# --- الموضوع ---
 async def get_subject(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["subject"] = update.message.text
     await update.message.reply_text("✉️ أرسل نص الرسالة:")
     return GET_BODY
 
-# --- الحصول على نص الرسالة وإرسالها من جميع الحسابات ---
+# --- إرسال الرسالة ---
 async def get_body(update: Update, context: ContextTypes.DEFAULT_TYPE):
     to_email = context.user_data["to_email"]
     subject = context.user_data["subject"]
@@ -124,7 +129,7 @@ async def get_body(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return ConversationHandler.END
 
-# --- إلغاء العملية ---
+# --- إلغاء ---
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("❌ تم الإلغاء.")
     return ConversationHandler.END
@@ -133,10 +138,8 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-    app.add_handler(CommandHandler("start", start))
-
     app.add_handler(ConversationHandler(
-        entry_points=[MessageHandler(filters.TEXT & filters.Regex("📤 إرسال من الكل"), handle_message)],
+        entry_points=[CommandHandler("start", start)],
         states={
             GET_EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_email)],
             GET_SUBJECT: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_subject)],
@@ -144,7 +147,5 @@ if __name__ == "__main__":
         },
         fallbacks=[CommandHandler("cancel", cancel)]
     ))
-
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     app.run_polling()
