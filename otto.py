@@ -13,7 +13,7 @@ from telegram.ext import (
 
 # --- معلومات أساسية ---
 OWNER_ID = 7753511487
-BOT_TOKEN = "8117880248:AAGHbJKDcn-KINHdMuzTAgRg0wUm--example"  # ← غيّري التوكن لو احتجتي
+BOT_TOKEN = "8117880248:AAGHbJKDcn-KINHdMuzTAgRg0wUm--example"  # ← غيّري التوكن الحقيقي هنا
 
 GET_EMAIL, GET_SUBJECT, GET_BODY = range(3)
 
@@ -134,7 +134,7 @@ async def check_emails_periodically(app):
                 imap.logout()
 
             except Exception as e:
-                print(f"📛 خطأ أثناء التحقق من بريد {acc['email']}: {e}")
+                print(f"📋 خطأ أثناء التحقق من بريد {acc['email']}: {e}")
 
         await asyncio.sleep(60)
 
@@ -183,7 +183,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(
         "🌟 عملتة ليكم البوت دا عشان يساعدكم تشدو في ارقامكم المحظورة ..\n"
-        "كل الحقوق محفوظة لمكتب:\n🏛️ 𝐎𝐓𝐓𝐎² • اوتـــــو 󱢏"
+        "كل الحقوق محفوظة لمكتب:\n🏛️ 𝐘𝐓𝐓𝐍 • اوتـــــو 🔏"
     )
     await show_server_menu(update, context)
     return GET_EMAIL
@@ -192,7 +192,7 @@ async def get_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected = update.message.text.strip()
 
     if selected == "👑 المطوّر":
-        await update.message.reply_text("📞 تواصل مع المطوّر عبر واتساب:\nwa.me/201234567890")
+        await update.message.reply_text("📞 تواصل مع المطوّر عبر واتساب:\nhttps://wa.me/201234567890")
         return GET_EMAIL
 
     if selected == "🔙 رجوع":
@@ -242,7 +242,7 @@ async def get_body(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if success and index is not None:
         context.bot_data["busy_servers"].add(index)
-        await update.message.reply_text("📛 السيرفر الآن مشغول لحين وصول رد من واتساب.")
+        await update.message.reply_text("📋 السيرفر الآن مشغول لحين وصول رد من واتساب.")
 
     return ConversationHandler.END
 
@@ -250,7 +250,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("❌ تم الإلغاء.")
     return ConversationHandler.END
 
-# --- تشغيل البوت في Termux ---
+# --- تشغيل البوت ---
 async def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
@@ -268,9 +268,4 @@ async def main():
     await app.run_polling()
 
 if __name__ == "__main__":
-    try:
-        loop = asyncio.get_event_loop()
-        loop.create_task(main())
-        loop.run_forever()
-    except KeyboardInterrupt:
-        print("❌ تم إيقاف البوت.")
+    asyncio.run(main())
